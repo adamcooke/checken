@@ -1,0 +1,41 @@
+$:.unshift(File.expand_path('../../lib', __FILE__))
+require 'checken'
+require 'checken/user'
+
+TEST_ROOT = File.expand_path('../', __FILE__)
+
+# This is a fake user that implements the absolutely bare minimum
+# required to
+class FakeUser
+  include Checken::User
+
+  attr_reader :assigned_checken_permissions
+  attr_accessor :name
+
+  def initialize(assigned_checken_permissions)
+    @assigned_checken_permissions = assigned_checken_permissions
+  end
+end
+
+class FakeProject
+  def initialize(name, archived = false)
+    @name = name
+    @archived = archived
+  end
+
+  def archived?
+    @archived == true
+  end
+end
+
+RSpec.configure do |config|
+  config.color = true
+
+  config.expect_with :rspec do |expectations|
+    expectations.include_chain_clauses_in_custom_matcher_descriptions = true
+  end
+
+  config.mock_with :rspec do |mocks|
+    mocks.verify_partial_doubles = true
+  end
+end
