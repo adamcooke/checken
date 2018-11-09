@@ -10,10 +10,12 @@ class FakeUser
   include Checken::User
 
   attr_reader :assigned_checken_permissions
+  attr_reader :checken_contexts
   attr_accessor :name
 
   def initialize(assigned_checken_permissions)
     @assigned_checken_permissions = assigned_checken_permissions
+    @checken_contexts = []
   end
 end
 

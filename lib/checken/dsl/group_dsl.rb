@@ -41,15 +41,19 @@ module Checken
 
         active_sets.each do |set_dsl|
           set_dsl.required_object_types.each do |rot|
-            permission.required_object_types << rot
+            permission.add_required_object_type(rot)
           end
 
-          set_dsl.rules.each do |key, value|
-            permission.rules[key] = value
+          set_dsl.rules.each do |key, rule|
+            permission.add_rule(key, rule)
           end
 
           set_dsl.dependencies.each do |path|
-            permission.dependencies << path
+            permission.add_dependency(path)
+          end
+
+          set_dsl.contexts.each do |context|
+            permission.add_context(context)
           end
         end
 

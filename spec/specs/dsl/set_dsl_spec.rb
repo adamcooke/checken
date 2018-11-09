@@ -103,4 +103,14 @@ describe Checken::DSL::SetDSL do
     expect(schema.root_group[:view].description).to eq 'View something'
   end
 
+  it "should allow contexts to be defined in a set" do
+    schema.root_group.dsl do
+      set do
+        context :admin
+        permission :view
+      end
+    end
+    expect(schema.root_group[:view].contexts).to include :admin
+  end
+
 end

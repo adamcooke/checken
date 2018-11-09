@@ -34,4 +34,19 @@ describe Checken::DSL::GroupDSL do
     expect(schema.root_group[:edit_project].required_object_types).to include 'Project'
   end
 
+  it "should allow contexts to be added in one line or seperately" do
+    schema.root_group.dsl do
+      permission :edit_project do
+        context :admin, :reseller
+        context :user
+      end
+    end
+    expect(schema.root_group[:edit_project].contexts).to include :admin
+    expect(schema.root_group[:edit_project].contexts).to include :reseller
+    expect(schema.root_group[:edit_project].contexts).to include :user
+    expect(schema.root_group[:edit_project].contexts).to_not include :potato
+  end
+
+
+
 end

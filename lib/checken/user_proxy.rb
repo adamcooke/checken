@@ -34,5 +34,16 @@ module Checken
       @user.assigned_checken_permissions
     end
 
+    # An array of contexts that this user is part of
+    #
+    # @return [Array<Symbol>]
+    def contexts
+      if @user.respond_to?(:checken_contexts)
+        @user.checken_contexts
+      else
+        []
+      end
+    end
+
   end
 end

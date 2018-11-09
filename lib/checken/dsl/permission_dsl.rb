@@ -20,6 +20,12 @@ module Checken
         end
       end
 
+      def context(*contexts)
+        contexts.each do |context|
+          @permission.contexts << context
+        end
+      end
+
     end
   end
 end

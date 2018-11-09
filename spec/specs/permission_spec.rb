@@ -38,6 +38,42 @@ describe Checken::Permission do
     end
   end
 
+  context "#add_context" do
+    it "should be able to add a context" do
+      permission.add_context(:admin)
+      expect(permission.contexts).to include :admin
+    end
+
+    it "should return false if a context already exists" do
+      expect(permission.add_context(:admin)).to eq :admin
+      expect(permission.add_context(:admin)).to be false
+    end
+  end
+
+  context "#add_dependency" do
+    it "should be able to add a dependency" do
+      permission.add_dependency("view.thing")
+      expect(permission.dependencies).to include "view.thing"
+    end
+
+    it "should return false if a dependency already exists" do
+      expect(permission.add_dependency("view.thing")).to eq "view.thing"
+      expect(permission.add_dependency("view.thing")).to be false
+    end
+  end
+
+  context "#add_required_object_type" do
+    it "should be able to add a required object type" do
+      permission.add_required_object_type("Account")
+      expect(permission.required_object_types).to include "Account"
+    end
+
+    it "should return false if a context already exists" do
+      expect(permission.add_required_object_type("Account")).to eq "Account"
+      expect(permission.add_required_object_type("Account")).to be false
+    end
+  end
+
   context "#parents" do
     it "should include the root group" do
       expect(permission.parents.size).to eq 1
@@ -124,6 +160,34 @@ describe Checken::Permission do
         expect(e.code).to eq 'PermissionNotGranted'
         expect(e.permission).to eq permission1
       end
+    end
+
+    it "should raise an error if not in the correct context" do
+      permission1 = group.add_permission(:change_password)
+      permission1.contexts << :admin
+      user = FakeUser.new(['change_password'])
+      user.checken_contexts << :reseller
+      expect { permission1.check!(user) }.to raise_error Checken::PermissionDeniedError do |e|
+        expect(e.code).to eq 'NotInContext'
+        expect(e.permission).to eq permission1
+      end
+    end
+
+    it "should be granted in the corrext context" do
+      permission1 = group.add_permission(:change_password)
+      permission1.contexts << :admin
+      user = FakeUser.new(['change_password'])
+      user.checken_contexts << :admin
+      expect { permission1.check!(user) }.to_not raise_error
+    end
+
+    it "should be granted in the corrext context when given an array" do
+      permission1 = group.add_permission(:change_password)
+      permission1.contexts << :admin
+      user = FakeUser.new(['change_password'])
+      user.checken_contexts << :reseller
+      user.checken_contexts << :admin
+      expect { permission1.check!(user) }.to_not raise_error
     end
   end
 

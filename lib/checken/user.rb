@@ -16,7 +16,7 @@ module Checken
         options = options_when_object_provided
       end
 
-      schema = options[:schema] || Checken.current_schema || Checken::Schema.instance
+      schema = options.delete(:schema) || Checken.current_schema || Checken::Schema.instance
 
       if schema.nil?
         raise Error, "Could not determine a schema. Make sure you set Checken.current_schema or pass :schema to can? methods."

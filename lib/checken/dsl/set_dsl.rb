@@ -5,12 +5,14 @@ module Checken
       attr_reader :rules
       attr_reader :required_object_types
       attr_reader :dependencies
+      attr_reader :contexts
 
       def initialize(group_dsl)
         @group_dsl = group_dsl
         @rules = {}
         @required_object_types = []
         @dependencies = []
+        @contexts = []
       end
 
       def rule(name, &block)
@@ -26,6 +28,12 @@ module Checken
       def depends_on(*paths)
         paths.each do |path|
           @dependencies << path
+        end
+      end
+
+      def context(*contexts)
+        contexts.each do |context|
+          @contexts << context
         end
       end
 

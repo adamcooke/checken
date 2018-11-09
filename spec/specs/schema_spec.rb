@@ -12,6 +12,14 @@ describe Checken::Schema do
       expect { schema.check_permission!('change_password', fake_user) }.to_not raise_error
     end
 
+    it "should not raise an error when context matches" do
+      permission = schema.root_group.add_permission(:change_password)
+      permission.contexts << :admin
+      fake_user = FakeUser.new(['change_password'])
+      fake_user.checken_contexts << :admin
+      expect { schema.check_permission!('change_password', fake_user, nil) }.to_not raise_error
+    end
+
     it "should raise an error if not granted" do
       permission = schema.root_group.add_permission(:change_password)
       fake_user = FakeUser.new(['logout'])

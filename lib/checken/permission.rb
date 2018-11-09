@@ -26,6 +26,11 @@ module Checken
     # @return [Array<String>]
     attr_reader :required_object_types
 
+    # The name of the contexts that apply to this permission
+    #
+    # @return [Array<Symbol>]
+    attr_reader :contexts
+
     # Create a new permission group
     #
     # @param group [Checken::PermissionGroup, nil]
@@ -39,6 +44,7 @@ module Checken
       @key = key
       @required_object_types = []
       @dependencies = []
+      @contexts = []
     end
 
     # Return a description
@@ -61,6 +67,15 @@ module Checken
       # encapsulated by the User#can? method.
       unless user_proxy.is_a?(Checken::UserProxy)
         user_proxy = @group.schema.config.user_proxy_class.new(user_proxy)
+      end
+
+      # If we're asking about this permission and we aren't in the correct
+      # context, it should be denied always.
+      unless @contexts.empty?
+        unless @contexts.any? { |c| user_proxy.contexts.include?(c) }
+          @group.schema.logger.info "`#{self.path}` not granted to #{user_proxy.description} because not in context."
+          raise PermissionDeniedError.new('NotInContext', "Permission '#{self.path}' cannot be granted in the #{user_proxy.contexts.join(',')} context(s). Only allowed for #{@contexts.join(', ')}.", self)
+        end
       end
 
       # Check the user has this permission
@@ -105,13 +120,55 @@ module Checken
     #
     # @param key [String]
     # @return [Checken::Rule]
-    def add_rule(key, &block)
+    def add_rule(key, rule = nil, &block)
       key = key.to_sym
       if rules[key].nil?
-        rule = Rule.new(key, &block)
+        rule ||= Rule.new(key, &block)
         rules[key] = rule
       else
         raise Error, "Rule with key '#{key}' already exists on this permission"
+      end
+    end
+
+    # Add a new context to this permission
+    #
+    # @param context [Symbol]
+    # @return [Symbol, false]
+    def add_context(context)
+      context = context.to_sym
+      if contexts.include?(context)
+        false
+      else
+        contexts << context
+        context
+      end
+    end
+
+    # Add a new dependency to this permission
+    #
+    # @param path [String]
+    # @return [String, false]
+    def add_dependency(path)
+      path = path.to_s
+      if dependencies.include?(path)
+        false
+      else
+        dependencies << path
+        path
+      end
+    end
+
+    # Add a new dependency to this permission
+    #
+    # @param path [String]
+    # @return [String, false]
+    def add_required_object_type(type)
+      type = type.to_s
+      if required_object_types.include?(type)
+        false
+      else
+        required_object_types << type
+        type
       end
     end
 
