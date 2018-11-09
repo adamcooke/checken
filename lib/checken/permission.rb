@@ -136,12 +136,21 @@ module Checken
     # @return [Symbol, false]
     def add_context(context)
       context = context.to_sym
-      if contexts.include?(context)
+      if self.contexts.include?(context)
         false
       else
-        contexts << context
+        self.contexts << context
         context
       end
+    end
+
+    # Remove all context from this permission
+    #
+    # @return [Integer]
+    def remove_all_contexts
+      previous_size = @contexts.size
+      @contexts = []
+      previous_size
     end
 
     # Add a new dependency to this permission

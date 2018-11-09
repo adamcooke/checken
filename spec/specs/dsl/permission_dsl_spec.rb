@@ -47,6 +47,20 @@ describe Checken::DSL::GroupDSL do
     expect(schema.root_group[:edit_project].contexts).to_not include :potato
   end
 
+  it "should allow contexts to be overriden" do
+    schema.root_group.dsl do
+      set do
+        context :admin
+        permission :edit_project do
+          context! :user
+        end
+      end
+    end
+    expect(schema.root_group[:edit_project].contexts).to include :user
+    expect(schema.root_group[:edit_project].contexts).to_not include :admin
+  end
+
+
 
 
 end

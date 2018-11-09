@@ -11,19 +11,24 @@ module Checken
       end
 
       def depends_on(path)
-        @permission.dependencies << path
+        @permission.add_dependency(path)
       end
 
       def requires_object(*names)
         names.each do |name|
-          @permission.required_object_types << name
+          @permission.add_required_object_type(name)
         end
       end
 
       def context(*contexts)
         contexts.each do |context|
-          @permission.contexts << context
+          @permission.add_context(context)
         end
+      end
+
+      def context!(*contexts)
+        @permission.remove_all_contexts
+        context(*contexts)
       end
 
     end

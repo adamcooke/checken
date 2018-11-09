@@ -50,6 +50,17 @@ describe Checken::Permission do
     end
   end
 
+  context "#remove_all_contexts" do
+    it "should be able to remove all contexts" do
+      expect(permission.contexts.size).to eq 0
+      permission.add_context(:admin)
+      expect(permission.contexts.size).to eq 1
+      permission.remove_all_contexts
+      expect(permission.contexts.size).to eq 0
+    end
+  end
+
+
   context "#add_dependency" do
     it "should be able to add a dependency" do
       permission.add_dependency("view.thing")
