@@ -42,14 +42,14 @@ end
 
 # We can use this in an action or view to determine if a user can perform an action.
 # We pass the objects required by the permission as arguments.
-current_user.can?('projects.list', current_account)
+current_user.can?('projects.show', @project)
 
 # We can also use this project an action at the controller class level. The
 # second argument is, optionally, the object to provide. A symbol will be called
 # as a method, instance variable or you can provide a proc. The user must be available as
 # current_user (this can be changed).
-restrict 'projects.list', :@current_account, only: [:index]
-restrict 'projects.list', proc { current_account }, only: [:index]
+restrict 'projects.show', :@project, only: [:index]
+restrict 'projects.show', proc { @project }, only: [:index]
 ```
 
 Next up, you might need to add dependencies to avoid needing further complexity to your ruleset.
