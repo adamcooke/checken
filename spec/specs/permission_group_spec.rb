@@ -82,6 +82,41 @@ describe Checken::PermissionGroup do
       expect(found_permissions[1]).to eq p2
       expect(found_permissions[2]).to eq p3
     end
+
+    it "should include all sub group permissions with a double wildcard" do
+      group = schema.root_group.add_group(:users)
+      p1 = group.add_permission(:add)
+      group2 = group.add_group(:subgroup)
+      p2 = group2.add_permission(:edit)
+      p3 = group2.add_permission(:delete)
+
+      found_permissions = schema.root_group.find_permissions_from_path("users.**.*")
+      expect(found_permissions.size).to eq 3
+      expect(found_permissions).to include p1
+      expect(found_permissions).to include p2
+      expect(found_permissions).to include p3
+    end
+  end
+
+  context "#all_permissions" do
+    it "should return all the groups own permissions" do
+      permission = schema.root_group.add_permission(:change_password)
+      expect(schema.root_group.all_permissions.size).to eq 1
+      expect(schema.root_group.all_permissions).to include permission
+    end
+
+    it "should return all permissions within any sub groups" do
+      group1 = schema.root_group.add_group(:group1)
+      p1 = group1.add_permission(:perm1)
+      group2 = group1.add_group(:group1)
+      p2 = group2.add_permission(:perm2)
+      group3 = group2.add_group(:group3)
+      p3 = group2.add_permission(:perm3)
+      expect(group1.all_permissions.size).to eq 3
+      expect(group1.all_permissions).to include p1
+      expect(group1.all_permissions).to include p2
+      expect(group1.all_permissions).to include p3
+    end
   end
 
   it "should raise an error if a group is created without a key" do

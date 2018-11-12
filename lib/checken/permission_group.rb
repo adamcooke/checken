@@ -93,6 +93,9 @@ module Checken
           else
             raise Error, "Wildcards must be placed at the end of a permission path"
           end
+        elsif part == :** && path_parts[0] == :*
+          # If we get a **.* wildcard, we should find permissions in the sub groups too.
+          return last_group_or_permission.all_permissions
         else
           last_group_or_permission = last_group_or_permission.group_or_permission(part)
           if last_group_or_permission.is_a?(Permission) && !path_parts.empty?
@@ -108,6 +111,20 @@ module Checken
       else
         raise Error, "Last part of path was not a permission. Last part of permission must be a path"
       end
+    end
+
+    # Return all permissions in this group and all the permissions in its sub groups
+    #
+    # @return [Array<Checken::Permission>]
+    def all_permissions
+      array = []
+      @permissions.each { |_, permission| array << permission }
+      @groups.each do |_, group|
+        group.all_permissions.each do |permission|
+          array << permission
+        end
+      end
+      array
     end
 
     # Execute the given block within the group DSL
