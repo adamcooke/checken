@@ -25,7 +25,7 @@ module Checken
       end
 
       # Insert the middleware
-      app.middleware.insert_after(ActionDispatch::Reloader, Checken::ReloadMiddleware)
+      app.middleware.insert_before(ActionDispatch::Callbacks, Checken::ReloadMiddleware)
     end
 
   end
