@@ -47,10 +47,13 @@ module Checken
       else
         # If we have multiple permissions, we need to loop through each permission
         # and handle them as appropriate.
+        granted_permissions = []
         ungranted_permissions = 0
         permissions.each do |permission|
           begin
-            permission.check!(user_proxy, object)
+            permission.check!(user_proxy, object).each do |permission|
+              granted_permissions << permission
+            end
           rescue Checken::PermissionDeniedError => e
             if e.code == 'PermissionNotGranted'
               # If the permission isn't granted, update the counter so we can
@@ -68,7 +71,7 @@ module Checken
           # have access and should be denied.
           raise PermissionDeniedError.new('PermissionNotGranted', "User does not have any permissions #{permissions.map(&:path).join(', ')} permission.", permissions.first)
         else
-          true
+          granted_permissions
         end
       end
     end

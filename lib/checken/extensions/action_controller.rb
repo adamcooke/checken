@@ -4,11 +4,19 @@ module Checken
 
       def self.included(base)
         base.extend ClassMethods
+        base.helper_method :granted_checken_permissions
       end
 
       def restrict(permission_path, object = nil, options = {})
         user = send(Checken.current_schema.config.current_user_method_name)
-        Checken.current_schema.check_permission!(permission_path, user, object)
+        granted_permissions = Checken.current_schema.check_permission!(permission_path, user, object)
+        granted_permissions.each do |permission|
+          granted_checken_permissions << permission
+        end
+      end
+
+      def granted_checken_permissions
+        @granted_checken_permissions ||= []
       end
 
       module ClassMethods
@@ -31,13 +39,13 @@ module Checken
               if object.to_s =~ /\A@/
                 resolved_object = instance_variable_get(object.to_s)
               else
-                puts "object!"
                 resolved_object = send(object)
               end
             else
               # Otherwise, the object is nil
               resolved_object = nil
             end
+
             restrict(permission_path, resolved_object, restrict_options)
           end
 

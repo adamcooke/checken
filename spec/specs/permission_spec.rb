@@ -123,16 +123,18 @@ describe Checken::Permission do
   context "#check!" do
     subject(:user) { FakeUser.new(['change_password']) }
 
-    it "should return true if there are no rules and is granted" do
+    it "should return an array if there are no rules and is granted" do
       permission = schema.root_group.add_permission(:change_password)
-      expect(permission.check!(user)).to be true
+      expect(permission.check!(user)).to be_a Array
+      expect(permission.check!(user).size).to eq 1
     end
 
-    it "should return true if all the rules are satisified" do
+    it "should return an array if all the rules are satisified" do
       permission = schema.root_group.add_permission(:change_password)
       permission.add_rule(:must_be_called_adam) { |user| user.name == "Adam" }
       user.name = "Adam"
-      expect(permission.check!(user)).to be true
+      expect(permission.check!(user)).to be_a Array
+      expect(permission.check!(user).size).to eq 1
     end
 
     it "should raise an error if the user is not granted the permission" do
@@ -161,6 +163,18 @@ describe Checken::Permission do
     end
 
     it "should invoke dependent permissions" do
+      permission1 = group.add_permission(:change_password)
+      permission2 = group.add_permission(:change_to_insecure_password)
+      permission2.dependencies << 'change_password'
+
+      user = FakeUser.new(['change_password', 'change_to_insecure_password'])
+      expect(permission2.check!(user)).to be_a Array
+      expect(permission2.check!(user).size).to eq 2
+      expect(permission2.check!(user)).to include permission1
+      expect(permission2.check!(user)).to include permission2
+    end
+
+    it "should invoke dependent permissions (with error)" do
       permission1 = group.add_permission(:change_password)
       permission2 = group.add_permission(:change_to_insecure_password)
       permission2.dependencies << 'change_password'

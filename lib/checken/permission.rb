@@ -101,7 +101,7 @@ module Checken
           raise error
         else
           @group.schema.logger.info "`#{self.path}` granted to #{user_proxy.description}"
-          true
+          [self, *dependencies_as_permissions]
         end
       else
         # If one of the permission doesn't have the right object type, raise an error

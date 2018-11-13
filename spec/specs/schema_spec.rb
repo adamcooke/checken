@@ -36,6 +36,14 @@ describe Checken::Schema do
       expect { schema.check_permission!('add_project', fake_user, Object.new) }.to raise_error Checken::InvalidObjectError
       expect { schema.check_permission!('add_project', fake_user, fake_user) }.to_not raise_error
     end
+
+    it "should return an array of permissions that have been checked" do
+      fake_user = FakeUser.new(['add_project'])
+      permission = schema.root_group.add_permission(:add_project)
+      checked_permissions = schema.check_permission!('add_project', fake_user)
+      expect(checked_permissions).to include permission
+
+    end
   end
 
   context "#check_permission! with wildcards" do
