@@ -112,7 +112,7 @@ module Checken
 
       # Check rules
       if self.required_object_types.empty? || self.required_object_types.include?(object.class.name)
-        if unsatisifed_rule = self.first_unsatisifed_rule(user_proxy, object)
+        if unsatisifed_rule = self.first_unsatisfied_rule(user_proxy, object)
           @group.schema.logger.info "`#{self.path} not granted to #{user_proxy.description} because rule `#{unsatisifed_rule.rule.key}` on `#{self.path}` was not satisified."
           error = PermissionDeniedError.new('RuleNotSatisifed', "Rule #{unsatisifed_rule.rule.key} (on #{self.path}) was not satisified.", self)
           error.rule = unsatisifed_rule
@@ -227,7 +227,7 @@ module Checken
     # @param [Checken::UserProxy]
     # @param [Object]
     # @return [Checken::Rule, false] false if all rules are satisified
-    def first_unsatisifed_rule(user_proxy, object)
+    def first_unsatisfied_rule(user_proxy, object)
       self.rules.values.each do |rule|
         rule_execution = RuleExecution.new(rule, user_proxy.user, object)
         unless rule_execution.satisfied?

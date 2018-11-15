@@ -312,7 +312,7 @@ describe Checken::Permission do
     end
   end
 
-  context "#first_unsatisifed_rule" do
+  context "#first_unsatisfied_rule" do
     subject(:permission) { schema.root_group.add_permission(:edit_project) }
 
     subject(:user_proxy) { Checken::UserProxy.new(FakeUser.new([permission.path])) }
@@ -322,7 +322,7 @@ describe Checken::Permission do
       permission.add_rule(:must_be_archived) { |u, o| o.archived? }
 
       fake_project = FakeProject.new('Example', true)
-      expect(permission.first_unsatisifed_rule(user_proxy, fake_project)).to be nil
+      expect(permission.first_unsatisfied_rule(user_proxy, fake_project)).to be nil
     end
 
     it "should return the errored rule object" do
@@ -330,7 +330,7 @@ describe Checken::Permission do
       permission.add_rule(:must_be_archived) { |u, o| o.archived? }
 
       fake_project = FakeProject.new('Example', false)
-      rule = permission.first_unsatisifed_rule(user_proxy, fake_project)
+      rule = permission.first_unsatisfied_rule(user_proxy, fake_project)
       expect(rule).to be_a Checken::RuleExecution
       expect(rule.rule).to be_a Checken::Rule
       expect(rule.rule.key).to eq :must_be_archived
