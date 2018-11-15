@@ -26,6 +26,7 @@ module Checken
       @code = code
       @description = description
       @permission = permission
+      @memo = {}
     end
 
     def message

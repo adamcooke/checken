@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'checken/permission'
+require 'checken/schema'
 
 describe Checken::Permission do
 
@@ -158,7 +159,7 @@ describe Checken::Permission do
       expect { permission.check!(user) }.to raise_error Checken::PermissionDeniedError do |e|
         expect(e.code).to eq 'RuleNotSatisifed'
         expect(e.permission).to eq permission
-        expect(e.rule).to eq rule
+        expect(e.rule.rule).to eq rule
       end
     end
 
@@ -233,6 +234,18 @@ describe Checken::Permission do
       end
     end
 
+    it "should include allow rules to garnish the error" do
+      permission1 = group.add_permission(:change_password)
+      permission1.add_rule(:some_rule) do |user, object, re|
+        re.memo[:in_error] = 12345
+        false
+      end
+      expect { permission1.check!(FakeUser.new(['change_password'])) }.to raise_error Checken::PermissionDeniedError do |e|
+        expect(e.rule).to be_a Checken::RuleExecution
+        expect(e.rule.memo[:in_error]).to eq 12345
+      end
+    end
+
   end
 
   context "#first_unsatisifed_rule" do
@@ -246,7 +259,7 @@ describe Checken::Permission do
 
     subject(:user_proxy) { Checken::UserProxy.new(FakeUser.new([permission.path])) }
 
-    it "should return an empty array if all rules are satisifed" do
+    it "should return nil if all rules are satisifed" do
       fake_project = FakeProject.new('Example', true)
       expect(permission.first_unsatisifed_rule(user_proxy, fake_project)).to be nil
     end
@@ -254,8 +267,9 @@ describe Checken::Permission do
     it "should return the errored rule object" do
       fake_project = FakeProject.new('Example', false)
       rule = permission.first_unsatisifed_rule(user_proxy, fake_project)
-      expect(rule).to be_a Checken::Rule
-      expect(rule.key).to eq :must_be_archived
+      expect(rule).to be_a Checken::RuleExecution
+      expect(rule.rule).to be_a Checken::Rule
+      expect(rule.rule.key).to eq :must_be_archived
     end
   end
 

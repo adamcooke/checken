@@ -12,8 +12,8 @@ module Checken
     #
     # @param user [Checken::User]
     # @return [Boolean]
-    def satisfied?(user, object = nil)
-      !!@block.call(user, object)
+    def satisfied?(rule_execution)
+      !!@block.call(rule_execution.user, rule_execution.object, rule_execution)
     end
 
   end
