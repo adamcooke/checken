@@ -20,6 +20,10 @@ module Checken
         @group.description = description
       end
 
+      def define_rule(key, *required_object_types, &block)
+        @group.define_rule(key, *required_object_types, &block)
+      end
+
       def set(&block)
         dsl = SetDSL.new(self)
         active_sets << dsl
@@ -54,6 +58,10 @@ module Checken
 
           set_dsl.contexts.each do |context|
             permission.add_context(context)
+          end
+
+          set_dsl.included_rules.each do |key, rule|
+            permission.include_rule(key, rule)
           end
         end
 

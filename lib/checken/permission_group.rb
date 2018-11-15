@@ -15,6 +15,7 @@ module Checken
     attr_reader :key
     attr_reader :groups
     attr_reader :permissions
+    attr_reader :defined_rules
 
     # Return a group or permission matching the given key
     #
@@ -40,6 +41,7 @@ module Checken
       @key = key.to_sym if key
       @groups = {}
       @permissions = {}
+      @defined_rules = {}
     end
 
     # Return a group or a permission that matches the given key
@@ -73,6 +75,33 @@ module Checken
         @permissions[key] = Permission.new(self, key)
       else
         raise Error, "Group or permission with key of #{key} already exists"
+      end
+    end
+
+    # Define a new global rule that can be used by any permissions
+    #
+    # @param key [Symbol]
+    # @param required_object_types [Array]
+    # @return [Checken::Rule]
+    def define_rule(key, *required_object_types, &block)
+      if all_defined_rules[key.to_sym]
+        raise Checken::Error, "Rule #{key} has already been defined"
+      else
+        rule = Rule.new(key, &block)
+        required_object_types.each { |rot| rule.required_object_types << rot }
+        @defined_rules[key.to_sym] = rule
+        rule
+      end
+    end
+
+    # Return an array of all defined rules on this and all upper groups
+    #
+    # @return [Array<Checken::Rule>]
+    def all_defined_rules
+      if @group
+        @defined_rules.merge(@group.all_defined_rules)
+      else
+        @defined_rules
       end
     end
 

@@ -31,6 +31,29 @@ describe Checken::PermissionGroup do
     end
   end
 
+  context "#define_rule" do
+    it "should be able to define a global rule" do
+      rule = schema.root_group.define_rule(:some_global_rule, 'Account') { |user| user == 1234 }
+      expect(rule).to be_a Checken::Rule
+    end
+
+    it "should not be able to define a permission that exists" do
+      rule = schema.root_group.define_rule(:some_global_rule, 'Account') { |user| user == 1234 }
+      expect do
+        schema.root_group.define_rule(:some_global_rule, 'Account')
+      end.to raise_error Checken::Error, /already been defined/
+    end
+
+    it "should not be able to define a permission that exists in a parent group" do
+      group1 = schema.root_group.add_group(:group1)
+      group1.define_rule(:some_global_rule, 'Account') { |user| user == 1234 }
+      group2 = group1.add_group(:group2)
+      expect do
+        group2.define_rule(:some_global_rule, 'Account') { |user| user == 1234 }
+      end.to raise_error Checken::Error, /already been defined/
+    end
+  end
+
   context "#find_permissions_from_path" do
     it "should return a top level permission" do
       permission = schema.root_group.add_permission(:change_password)

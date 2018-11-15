@@ -26,7 +26,6 @@ describe Checken::Permission do
     end
   end
 
-
   context "#add_rule" do
     it "should be able to add a rule" do
       rule = permission.add_rule(:must_belong_to_account) { |user| user == 1234}
@@ -36,6 +35,18 @@ describe Checken::Permission do
     it "should raise an error when a rule already exists on this permission" do
       rule = permission.add_rule(:must_belong_to_account) { |user| user == 1234}
       expect { permission.add_rule(:must_belong_to_account) { |user| user == 1234 } }.to raise_error Checken::Error, /already exists/
+    end
+  end
+
+  context "#include_rule" do
+    it "should be able to include a rule" do
+      rule = permission.include_rule(:a_global_rule)
+      expect(rule).to be_a Checken::IncludedRule
+    end
+
+    it "should raise an error if already included" do
+      rule = permission.include_rule(:a_global_rule)
+      expect { permission.include_rule(:a_global_rule)}.to raise_error Checken::Error, /already been included/
     end
   end
 
@@ -245,31 +256,59 @@ describe Checken::Permission do
         expect(e.rule.memo[:in_error]).to eq 12345
       end
     end
-
   end
 
   context "#first_unsatisifed_rule" do
-
     subject(:permission) do
       permission = schema.root_group.add_permission(:edit_project)
-      permission.required_object_types << 'FakeProject'
-      permission.add_rule(:must_be_archived) { |u, o| o.archived? }
       permission
     end
 
     subject(:user_proxy) { Checken::UserProxy.new(FakeUser.new([permission.path])) }
 
     it "should return nil if all rules are satisifed" do
+      permission.required_object_types << 'FakeProject'
+      permission.add_rule(:must_be_archived) { |u, o| o.archived? }
+
       fake_project = FakeProject.new('Example', true)
       expect(permission.first_unsatisifed_rule(user_proxy, fake_project)).to be nil
     end
 
     it "should return the errored rule object" do
+      permission.required_object_types << 'FakeProject'
+      permission.add_rule(:must_be_archived) { |u, o| o.archived? }
+
       fake_project = FakeProject.new('Example', false)
       rule = permission.first_unsatisifed_rule(user_proxy, fake_project)
       expect(rule).to be_a Checken::RuleExecution
       expect(rule.rule).to be_a Checken::Rule
       expect(rule.rule.key).to eq :must_be_archived
+    end
+
+    it "should check included rules" do
+      included_rule = schema.root_group.define_rule(:global_rule) { false }
+      permission.include_rule(:global_rule)
+      fake_project = FakeProject.new('Example', true)
+      rule = permission.first_unsatisifed_rule(user_proxy, fake_project)
+      expect(rule).to be_a Checken::RuleExecution
+      expect(rule.rule.key).to eq :global_rule
+      expect(rule.rule).to eq included_rule
+    end
+
+    it "should translate objects on included rules as appropriate" do
+      included_rule = schema.root_group.define_rule(:global_rule) { |user, object| object == "12345" }
+      permission.include_rule(:global_rule) { |object| object.to_i }
+      rule = permission.first_unsatisifed_rule(user_proxy, "12345")
+      expect(rule).to be_a Checken::RuleExecution
+      expect(rule.rule.key).to eq :global_rule
+      expect(rule.object).to eq 12345
+    end
+
+    it "should raise an error if an included rule isn't present" do
+      permission.include_rule(:global_rule)
+      expect do
+        permission.first_unsatisifed_rule(user_proxy, "12345")
+      end.to raise_error Checken::Error, /No defined rule/
     end
   end
 

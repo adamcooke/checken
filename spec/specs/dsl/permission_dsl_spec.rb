@@ -25,6 +25,16 @@ describe Checken::DSL::GroupDSL do
     expect(schema.root_group[:change_password].dependencies).to include 'login'
   end
 
+
+  it "should allow rules to be included" do
+    schema.root_group.dsl do
+      permission :change_password do
+        include_rule :some_rule
+      end
+    end
+    expect(schema.root_group[:change_password].included_rules[:some_rule]).to be_a Checken::IncludedRule
+  end
+
   it "should allow required objects to be added" do
     schema.root_group.dsl do
       permission :edit_project do

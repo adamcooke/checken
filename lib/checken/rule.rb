@@ -2,10 +2,12 @@ module Checken
   class Rule
 
     attr_reader :key
+    attr_reader :required_object_types
 
     def initialize(key, &block)
       @key = key
       @block = block
+      @required_object_types = []
     end
 
     # Are we satisifed that this rule's condition is true?

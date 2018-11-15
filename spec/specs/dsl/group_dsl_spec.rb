@@ -32,6 +32,13 @@ describe Checken::DSL::GroupDSL do
     expect(schema.root_group[:change_password].description).to eq "Can change password"
   end
 
+  it "should allow rules to be defined" do
+    schema.root_group.dsl do
+      define_rule(:global_rule) { 1234 }
+    end
+    expect(schema.root_group.defined_rules[:global_rule]).to be_a Checken::Rule
+  end
+
   it "should be able set dependencies to all permissions within a group" do
     schema.root_group.dsl do
       permission :view, "Can view thing"

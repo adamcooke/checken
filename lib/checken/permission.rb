@@ -2,6 +2,7 @@ require 'checken/concerns/has_parents'
 require 'checken/dsl/permission_dsl'
 require 'checken/rule'
 require 'checken/rule_execution'
+require 'checken/included_rule'
 
 module Checken
   class Permission
@@ -139,6 +140,27 @@ module Checken
       end
     end
 
+    # Return a hash of all configured included rules
+    #
+    # @return [Hash]
+    def included_rules
+      @included_rules ||= {}
+    end
+
+    # Add a new rule to this permission
+    #
+    # @param key [String]
+    # @return [Checken::Rule]
+    def include_rule(key, included_rule = nil, &block)
+      key = key.to_sym
+      if included_rules[key].nil?
+        included_rule ||= IncludedRule.new(key, &block)
+        included_rules[key] = included_rule
+      else
+        raise Error, "Rule with key '#{key}' already been included on this permission"
+      end
+    end
+
     # Add a new context to this permission
     #
     # @param context [Symbol]
@@ -196,6 +218,28 @@ module Checken
     # @param [Object]
     # @return [Checken::Rule, false] false if all rules are satisified
     def first_unsatisifed_rule(user_proxy, object)
+      self.included_rules.values.each do |included_rule|
+        if included_rule.block
+          translated_object = included_rule.block.call(object)
+        else
+          translated_object = object
+        end
+
+        rule = @group.all_defined_rules[included_rule.key]
+        if rule.nil?
+          raise Error, "No defined rule with key #{included_rule.key} is available for #{self.path}"
+        end
+
+        unless rule.required_object_types.empty? || rule.required_object_types.include?(translated_object.class.name)
+          raise InvalidObjectError, "The #{translated_object.class.name} object provided to included rule (#{rule.key}) for #{self.path} was not valid. Valid object types are: #{rule.required_object_types.join(', ')}"
+        end
+
+        rule_execution = RuleExecution.new(rule, user_proxy.user, translated_object)
+        unless rule_execution.satisfied?
+          return rule_execution
+        end
+      end
+
       self.rules.values.each do |rule|
         rule_execution = RuleExecution.new(rule, user_proxy.user, object)
         unless rule_execution.satisfied?

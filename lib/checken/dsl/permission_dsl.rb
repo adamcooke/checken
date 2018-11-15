@@ -14,6 +14,10 @@ module Checken
         @permission.add_dependency(path)
       end
 
+      def include_rule(key, &block)
+        @permission.include_rule(key, &block)
+      end
+
       def requires_object(*names)
         names.each do |name|
           @permission.add_required_object_type(name)

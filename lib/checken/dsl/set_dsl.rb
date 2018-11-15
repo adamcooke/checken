@@ -6,6 +6,7 @@ module Checken
       attr_reader :required_object_types
       attr_reader :dependencies
       attr_reader :contexts
+      attr_reader :included_rules
 
       def initialize(group_dsl)
         @group_dsl = group_dsl
@@ -13,10 +14,15 @@ module Checken
         @required_object_types = []
         @dependencies = []
         @contexts = []
+        @included_rules = {}
       end
 
       def rule(name, &block)
         @rules[name] = Rule.new(name, &block)
+      end
+
+      def include_rule(key, &block)
+        @included_rules[key] = IncludedRule.new(key, &block)
       end
 
       def requires_object(*names)

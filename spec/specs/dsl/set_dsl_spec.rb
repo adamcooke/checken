@@ -113,4 +113,17 @@ describe Checken::DSL::SetDSL do
     expect(schema.root_group[:view].contexts).to include :admin
   end
 
+  it "should allow included rules to be defined in a set" do
+    schema.root_group.dsl do
+      set do
+        include_rule :some_rule
+        permission :view
+        permission :edit
+      end
+    end
+    expect(schema.root_group[:view].included_rules[:some_rule]).to be_a Checken::IncludedRule
+    expect(schema.root_group[:edit].included_rules[:some_rule]).to be_a Checken::IncludedRule
+    expect(schema.root_group[:view].included_rules[:some_rule]).to eq schema.root_group[:edit].included_rules[:some_rule]
+  end
+
 end
