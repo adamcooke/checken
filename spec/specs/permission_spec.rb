@@ -214,6 +214,25 @@ describe Checken::Permission do
       user.checken_contexts << :admin
       expect { permission1.check!(user) }.to_not raise_error
     end
+
+    it "should include the user with the error" do
+      permission1 = group.add_permission(:change_password)
+      user = FakeUser.new([])
+      expect { permission1.check!(user) }.to raise_error Checken::PermissionDeniedError do |e|
+        expect(e.user).to eq user
+      end
+    end
+
+    it "should include the object with the error" do
+      permission1 = group.add_permission(:change_password)
+      permission1.required_object_types << 'FakeProject'
+      user = FakeUser.new([])
+      object = FakeProject.new(:test)
+      expect { permission1.check!(user, object) }.to raise_error Checken::PermissionDeniedError do |e|
+        expect(e.object).to eq object
+      end
+    end
+
   end
 
   context "#first_unsatisifed_rule" do

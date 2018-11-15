@@ -19,6 +19,8 @@ module Checken
     attr_reader :description
     attr_reader :permission
     attr_accessor :rule
+    attr_accessor :user
+    attr_accessor :object
 
     def initialize(code, description, permission = nil)
       @code = code

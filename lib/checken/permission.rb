@@ -74,14 +74,20 @@ module Checken
       unless @contexts.empty?
         unless @contexts.any? { |c| user_proxy.contexts.include?(c) }
           @group.schema.logger.info "`#{self.path}` not granted to #{user_proxy.description} because not in context."
-          raise PermissionDeniedError.new('NotInContext', "Permission '#{self.path}' cannot be granted in the #{user_proxy.contexts.join(',')} context(s). Only allowed for #{@contexts.join(', ')}.", self)
+          error = PermissionDeniedError.new('NotInContext', "Permission '#{self.path}' cannot be granted in the #{user_proxy.contexts.join(',')} context(s). Only allowed for #{@contexts.join(', ')}.", self)
+          error.user = user_proxy.user
+          error.object = object
+          raise error
         end
       end
 
       # Check the user has this permission
       unless user_proxy.granted_permissions.include?(self.path)
         @group.schema.logger.info "`#{self.path}` not granted to #{user_proxy.description}"
-        raise PermissionDeniedError.new('PermissionNotGranted', "User has not been granted the '#{self.path}' permission", self)
+        error = PermissionDeniedError.new('PermissionNotGranted', "User has not been granted the '#{self.path}' permission", self)
+        error.user = user_proxy.user
+        error.object = object
+        raise error
       end
 
       # Check other dependent rules once we've established this
@@ -98,6 +104,8 @@ module Checken
           @group.schema.logger.info "`#{self.path} not granted to #{user_proxy.description} because rule `#{unsatisifed_rule.key}` on `#{self.path}` was not satisified."
           error = PermissionDeniedError.new('RuleNotSatisifed', "Rule #{unsatisifed_rule.key} (on #{self.path}) was not satisified.", self)
           error.rule = unsatisifed_rule
+          error.user = user_proxy.user
+          error.object = object
           raise error
         else
           @group.schema.logger.info "`#{self.path}` granted to #{user_proxy.description}"
