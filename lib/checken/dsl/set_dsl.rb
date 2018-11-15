@@ -21,8 +21,12 @@ module Checken
         @rules[name] = Rule.new(name, &block)
       end
 
-      def include_rule(key, &block)
-        @included_rules[key] = IncludedRule.new(key, &block)
+      def include_rule(key, options = {}, &block)
+        @included_rules[key] = begin
+          rule = IncludedRule.new(key, &block)
+          rule.condition = options[:if]
+          rule
+        end
       end
 
       def requires_object(*names)

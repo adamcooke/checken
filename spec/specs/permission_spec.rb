@@ -44,6 +44,12 @@ describe Checken::Permission do
       expect(rule).to be_a Checken::IncludedRule
     end
 
+    it "should be able to specify a condition" do
+      condition = proc { true }
+      rule = permission.include_rule(:a_global_rule, :if => condition)
+      expect(rule.condition).to eq condition
+    end
+
     it "should raise an error if already included" do
       rule = permission.include_rule(:a_global_rule)
       expect { permission.include_rule(:a_global_rule)}.to raise_error Checken::Error, /already been included/
@@ -302,7 +308,6 @@ describe Checken::Permission do
       end.to raise_error Checken::Error, /No defined rule/
     end
 
-
     it "should raise an error with invalid objects" do
       schema.root_group.define_rule(:global_rule, 'String') { true }
       permission.include_rule(:global_rule)
@@ -310,6 +315,18 @@ describe Checken::Permission do
       expect { permission.first_unsatisfied_included_rule(user_proxy, Array.new) }.to raise_error Checken::InvalidObjectError
       expect { permission.first_unsatisfied_included_rule(user_proxy, "A String") }.to_not raise_error
     end
+
+    it "should not check included rules where the condition isn't valid" do
+      included_rule = schema.root_group.define_rule(:global_rule) { |user, object| object == 12345 }
+      permission.include_rule(:global_rule, :if => proc { |user, object| object.is_a?(Integer) })
+      # Rule should be OK because it matches
+      expect(permission.first_unsatisfied_included_rule(user_proxy, 12345)).to be nil
+      # Rule should be invoked
+      expect(permission.first_unsatisfied_included_rule(user_proxy, 55555).rule).to eq included_rule
+      # The rule should not be used because this is a string.
+      expect(permission.first_unsatisfied_included_rule(user_proxy, "12345")).to be nil
+    end
+
   end
 
   context "#first_unsatisfied_rule" do

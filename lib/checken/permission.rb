@@ -161,10 +161,21 @@ module Checken
     #
     # @param key [String]
     # @return [Checken::Rule]
-    def include_rule(key, included_rule = nil, &block)
-      key = key.to_sym
+    def include_rule(key_or_existing_rule, options = {}, &block)
+      if key_or_existing_rule.is_a?(IncludedRule)
+        key = key_or_existing_rule.key
+        included_rule = key_or_existing_rule
+      else
+        key = key_or_existing_rule.to_sym
+        included_rule = nil
+      end
+
       if included_rules[key].nil?
-        included_rule ||= IncludedRule.new(key, &block)
+        included_rule ||= begin
+          new_rule = IncludedRule.new(key, &block)
+          new_rule.condition = options[:if]
+          new_rule
+        end
         included_rules[key] = included_rule
       else
         raise Error, "Rule with key '#{key}' already been included on this permission"
@@ -239,6 +250,13 @@ module Checken
 
     def first_unsatisfied_included_rule(user_proxy, object)
       self.included_rules.values.each do |included_rule|
+
+        if included_rule.condition && !included_rule.condition.call(user_proxy.user, object)
+          # If the inclusion has a condition, check that and skip this
+          # included rule if it's not valid.
+          next
+        end
+
         if included_rule.block
           translated_object = included_rule.block.call(object)
         else

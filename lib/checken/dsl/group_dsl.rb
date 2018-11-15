@@ -61,7 +61,7 @@ module Checken
           end
 
           set_dsl.included_rules.each do |key, rule|
-            permission.include_rule(key, rule)
+            permission.include_rule(rule)
           end
         end
 
