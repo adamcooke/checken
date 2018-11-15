@@ -100,6 +100,16 @@ module Checken
         dependency_permission.check!(user_proxy, object)
       end
 
+      # Check any included rules too
+      if unsatisifed_rule = self.first_unsatisfied_included_rule(user_proxy, object)
+        @group.schema.logger.info "`#{self.path} not granted to #{user_proxy.description} because rule `#{unsatisifed_rule.rule.key}` on `#{self.path}` was not satisified."
+        error = PermissionDeniedError.new('IncludedRuleNotSatisifed', "Rule #{unsatisifed_rule.rule.key} (on #{self.path}) was not satisified.", self)
+        error.rule = unsatisifed_rule
+        error.user = user_proxy.user
+        error.object = object
+        raise error
+      end
+
       # Check rules
       if self.required_object_types.empty? || self.required_object_types.include?(object.class.name)
         if unsatisifed_rule = self.first_unsatisifed_rule(user_proxy, object)
@@ -218,6 +228,16 @@ module Checken
     # @param [Object]
     # @return [Checken::Rule, false] false if all rules are satisified
     def first_unsatisifed_rule(user_proxy, object)
+      self.rules.values.each do |rule|
+        rule_execution = RuleExecution.new(rule, user_proxy.user, object)
+        unless rule_execution.satisfied?
+          return rule_execution
+        end
+      end
+      nil
+    end
+
+    def first_unsatisfied_included_rule(user_proxy, object)
       self.included_rules.values.each do |included_rule|
         if included_rule.block
           translated_object = included_rule.block.call(object)
@@ -235,13 +255,6 @@ module Checken
         end
 
         rule_execution = RuleExecution.new(rule, user_proxy.user, translated_object)
-        unless rule_execution.satisfied?
-          return rule_execution
-        end
-      end
-
-      self.rules.values.each do |rule|
-        rule_execution = RuleExecution.new(rule, user_proxy.user, object)
         unless rule_execution.satisfied?
           return rule_execution
         end

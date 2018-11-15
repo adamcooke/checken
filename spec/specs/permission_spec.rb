@@ -256,13 +256,64 @@ describe Checken::Permission do
         expect(e.rule.memo[:in_error]).to eq 12345
       end
     end
+
+    it "should raise an error if included rules are invalid" do
+      rule = group.define_rule(:global_rule) { |user, object| object == "Hello!" }
+      permission = group.add_permission(:change_password)
+      permission.include_rule(:global_rule)
+      expect { permission.check!(user, 'Goodbye') }.to raise_error Checken::PermissionDeniedError do |e|
+        expect(e.code).to eq 'IncludedRuleNotSatisifed'
+        expect(e.rule.rule).to eq rule
+      end
+    end
+  end
+
+  context "#first_unsatisfied_included_rule" do
+    subject(:permission) { schema.root_group.add_permission(:edit_project) }
+    subject(:user_proxy) { Checken::UserProxy.new(FakeUser.new([permission.path])) }
+
+    it "should return nil when no included rules" do
+      expect(permission.first_unsatisfied_included_rule(user_proxy, nil)).to be nil
+    end
+
+    it "should return the first included rule which isn't valid" do
+      included_rule = schema.root_group.define_rule(:global_rule) { false }
+      permission.include_rule(:global_rule)
+      fake_project = FakeProject.new('Example', true)
+      rule = permission.first_unsatisfied_included_rule(user_proxy, fake_project)
+      expect(rule).to be_a Checken::RuleExecution
+      expect(rule.rule.key).to eq :global_rule
+      expect(rule.rule).to eq included_rule
+    end
+
+    it "should translate objects on included rules as appropriate" do
+      included_rule = schema.root_group.define_rule(:global_rule) { |user, object| object == "12345" }
+      permission.include_rule(:global_rule) { |object| object.to_i }
+      rule = permission.first_unsatisfied_included_rule(user_proxy, "12345")
+      expect(rule).to be_a Checken::RuleExecution
+      expect(rule.rule.key).to eq :global_rule
+      expect(rule.object).to eq 12345
+    end
+
+    it "should raise an error if an included rule isn't present" do
+      permission.include_rule(:global_rule)
+      expect do
+        permission.first_unsatisfied_included_rule(user_proxy, "12345")
+      end.to raise_error Checken::Error, /No defined rule/
+    end
+
+
+    it "should raise an error with invalid objects" do
+      schema.root_group.define_rule(:global_rule, 'String') { true }
+      permission.include_rule(:global_rule)
+      expect { permission.first_unsatisfied_included_rule(user_proxy, 1234) }.to raise_error Checken::InvalidObjectError
+      expect { permission.first_unsatisfied_included_rule(user_proxy, Array.new) }.to raise_error Checken::InvalidObjectError
+      expect { permission.first_unsatisfied_included_rule(user_proxy, "A String") }.to_not raise_error
+    end
   end
 
   context "#first_unsatisifed_rule" do
-    subject(:permission) do
-      permission = schema.root_group.add_permission(:edit_project)
-      permission
-    end
+    subject(:permission) { schema.root_group.add_permission(:edit_project) }
 
     subject(:user_proxy) { Checken::UserProxy.new(FakeUser.new([permission.path])) }
 
@@ -283,32 +334,6 @@ describe Checken::Permission do
       expect(rule).to be_a Checken::RuleExecution
       expect(rule.rule).to be_a Checken::Rule
       expect(rule.rule.key).to eq :must_be_archived
-    end
-
-    it "should check included rules" do
-      included_rule = schema.root_group.define_rule(:global_rule) { false }
-      permission.include_rule(:global_rule)
-      fake_project = FakeProject.new('Example', true)
-      rule = permission.first_unsatisifed_rule(user_proxy, fake_project)
-      expect(rule).to be_a Checken::RuleExecution
-      expect(rule.rule.key).to eq :global_rule
-      expect(rule.rule).to eq included_rule
-    end
-
-    it "should translate objects on included rules as appropriate" do
-      included_rule = schema.root_group.define_rule(:global_rule) { |user, object| object == "12345" }
-      permission.include_rule(:global_rule) { |object| object.to_i }
-      rule = permission.first_unsatisifed_rule(user_proxy, "12345")
-      expect(rule).to be_a Checken::RuleExecution
-      expect(rule.rule.key).to eq :global_rule
-      expect(rule.object).to eq 12345
-    end
-
-    it "should raise an error if an included rule isn't present" do
-      permission.include_rule(:global_rule)
-      expect do
-        permission.first_unsatisifed_rule(user_proxy, "12345")
-      end.to raise_error Checken::Error, /No defined rule/
     end
   end
 
