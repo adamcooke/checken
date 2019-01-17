@@ -5,11 +5,26 @@ module Checken
       def self.included(base)
         base.extend ClassMethods
         base.helper_method :granted_checken_permissions
+        base.class_eval do
+          private :checken_user_proxy
+          private :restrict
+          private :granted_checken_permissions
+        end
+      end
+
+      def checken_user_proxy
+        # Can be overriden to return the user proxy class which can be used
+        # when performing permission checks using `restrict`.
       end
 
       def restrict(permission_path, object = nil, options = {})
-        user = send(Checken.current_schema.config.current_user_method_name)
-        granted_permissions = Checken.current_schema.check_permission!(permission_path, user, object)
+        if checken_user_proxy.nil?
+          user = send(Checken.current_schema.config.current_user_method_name)
+          user_proxy = Checken.current_schema.config.user_proxy_class.new(user)
+        else
+          user_proxy = checken_user_proxy
+        end
+        granted_permissions = Checken.current_schema.check_permission!(permission_path, user_proxy, object)
         granted_permissions.each do |permission|
           granted_checken_permissions << permission
         end
