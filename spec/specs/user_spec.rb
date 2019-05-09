@@ -28,4 +28,17 @@ describe Checken::User do
       expect(user.can?('logout', :schema => other_schema)).to be true
     end
   end
+
+  context "check_permission!" do
+    it "should return an array  when permission is granted" do
+      user = FakeUser.new(['change_password'])
+      expect(user.check_permission!('change_password')).to be_a Array
+      expect(user.check_permission!('change_password')[0].key).to eq :change_password
+    end
+
+    it "should raise an error when permission is denied" do
+      user = FakeUser.new([])
+      expect { user.check_permission!('change_password') }.to raise_error(Checken::PermissionDeniedError)
+    end
+  end
 end

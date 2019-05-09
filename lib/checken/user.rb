@@ -6,8 +6,7 @@ module Checken
     # @param permission_path [String] the permission name/path
     # @option options [Checken::Schema] :schema an optional scheme to use
     # @return [Boolean]
-    def can?(permission_path, object_or_options = {}, options_when_object_provided = {})
-
+    def check_permission!(permission_path, object_or_options = {}, options_when_object_provided = {})
       if object_or_options.is_a?(Hash)
         object = nil
         options = object_or_options
@@ -24,6 +23,10 @@ module Checken
 
       user_proxy = schema.config.user_proxy_class.new(self)
       schema.check_permission!(permission_path, user_proxy, object)
+    end
+
+    def can?(*args)
+      check_permission!(*args)
       true
     rescue Checken::PermissionDeniedError => e
       false
