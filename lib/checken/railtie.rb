@@ -12,7 +12,7 @@ module Checken
       Checken::Schema.instance.configure do |config|
         # Set the logger to log into a file in the log directory.
         # This can be overriden later if needed.
-        config.logger = Logger.new(Rails.root.join('log', 'checken.log'))
+        config.log_path = Rails.root.join('log', 'checken.log')
       end
 
       # Load from a directory
